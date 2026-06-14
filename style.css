@@ -58,11 +58,17 @@ html, body {
   line-height: 1.4;
 }
 
-.setup-hint {
-  margin-top: 24px;
-  font-size: 16px;
-  color: var(--text-light);
-  text-align: center;
+.setup-btn {
+  margin-top: 32px;
+  padding: 14px 40px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 #loading-screen p {

@@ -32,6 +32,11 @@ export function initSettings({ onSave }) {
   title.addEventListener('mouseup', () => clearTimeout(pressTimer));
   title.addEventListener('mouseleave', () => clearTimeout(pressTimer));
 
+  const setupBtn = document.getElementById('setup-settings-btn');
+  if (setupBtn) {
+    setupBtn.addEventListener('click', openSettings);
+  }
+
   function openSettings() {
     icalInput.value = getIcalUrl() || '';
     proxyInput.value = getProxyUrl() || '';
