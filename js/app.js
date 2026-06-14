@@ -41,7 +41,10 @@ function renderDayView() {
   document.getElementById('day-date').textContent = formatDate(date);
 
   const t = Math.min(state.dayOffset / 6, 1);
-  document.body.style.background = `hsl(${40 + t * 5}, ${30 - t * 20}%, ${93 + t * 4}%)`;
+  const hue = 140 - t * 100;
+  const sat = 30 - t * 20;
+  const lit = 90 + t * 7;
+  document.body.style.background = `hsl(${hue}, ${sat}%, ${lit}%)`;
 
   const dayEvents = getEventsForDate(state.events, dateStr);
   const list = document.getElementById('events-list');
