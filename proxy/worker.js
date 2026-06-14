@@ -1,3 +1,5 @@
+const ALLOWED_HOST = 'calendar.google.com';
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -17,8 +19,22 @@ export default {
       return new Response('Missing ?url= parameter', { status: 400 });
     }
 
+    let parsed;
     try {
-      const response = await fetch(icalUrl);
+      parsed = new URL(icalUrl);
+    } catch {
+      return new Response('Invalid URL', { status: 400 });
+    }
+
+    if (parsed.protocol !== 'https:' || parsed.hostname !== ALLOWED_HOST) {
+      return new Response('Only Google Calendar iCal URLs are allowed', { status: 403 });
+    }
+
+    try {
+      const response = await fetch(icalUrl, { redirect: 'manual' });
+      if (!response.ok) {
+        return new Response('Upstream error', { status: 502 });
+      }
       const body = await response.text();
 
       return new Response(body, {
@@ -28,8 +44,8 @@ export default {
           'Cache-Control': 'public, max-age=300',
         },
       });
-    } catch (err) {
-      return new Response(`Fetch error: ${err.message}`, { status: 502 });
+    } catch {
+      return new Response('Upstream fetch failed', { status: 502 });
     }
   },
 };
