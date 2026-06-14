@@ -3,7 +3,7 @@ import { parseEvents, getEventsForDate } from './calendar.js';
 import { initSwipe } from './swipe.js';
 import { initSettings, getIcalUrl, getProxyUrl } from './settings.js';
 
-const DEFAULT_PROXY = 'https://api.allorigins.win/raw';
+const DEFAULT_PROXY = 'https://matti-proxy.tomasbruhn.workers.dev';
 
 const state = {
   today: null,
@@ -155,7 +155,10 @@ async function fetchCalendarData() {
   const url = `${proxyBase}?url=${encodeURIComponent(icalUrl)}`;
 
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
 
