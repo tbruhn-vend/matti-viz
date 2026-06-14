@@ -40,6 +40,9 @@ function renderDayView() {
   document.getElementById('day-weekday').textContent = getWeekdayName(date);
   document.getElementById('day-date').textContent = formatDate(date);
 
+  const t = Math.min(state.dayOffset / 6, 1);
+  document.body.style.background = `hsl(${40 + t * 5}, ${30 - t * 20}%, ${93 + t * 4}%)`;
+
   const dayEvents = getEventsForDate(state.events, dateStr);
   const list = document.getElementById('events-list');
   const emptyState = document.getElementById('empty-state');
@@ -109,7 +112,8 @@ function renderTimeline() {
 
     const label = document.createElement('span');
     label.className = 'timeline-label';
-    label.textContent = day.weekdayShort;
+    if (day.offset === 0) label.classList.add('today-label');
+    label.textContent = day.offset === 0 ? 'IDAG' : day.weekdayShort;
 
     wrapper.appendChild(dot);
     wrapper.appendChild(label);
