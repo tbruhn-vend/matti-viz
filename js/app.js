@@ -1,7 +1,7 @@
 import { extractEmoji, extractImageUrl, getRelativeLabel, getWeekdayName, formatDate, dateToString, getTimelineDays } from './dates.js';
 import { parseEvents, getEventsForDate } from './calendar.js';
 import { initSwipe } from './swipe.js';
-import { initSettings, getIcalUrl, getProxyUrl } from './settings.js';
+import { initSettings, getIcalUrl } from './settings.js';
 
 const DEFAULT_PROXY = 'https://matti-proxy.tomasbruhn.workers.dev';
 
@@ -151,8 +151,7 @@ async function fetchCalendarData() {
   const icalUrl = getIcalUrl();
   if (!icalUrl) return;
 
-  const proxyBase = getProxyUrl() || DEFAULT_PROXY;
-  const url = `${proxyBase}?url=${encodeURIComponent(icalUrl)}`;
+  const url = `${DEFAULT_PROXY}?url=${encodeURIComponent(icalUrl)}`;
 
   try {
     const controller = new AbortController();
