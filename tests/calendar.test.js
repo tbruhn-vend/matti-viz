@@ -138,6 +138,62 @@ END:VCALENDAR`;
   });
 });
 
+describe('parseEvents — EXDATE', () => {
+  const EXDATE = `BEGIN:VCALENDAR
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260616
+DTEND;VALUE=DATE:20260617
+RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR
+EXDATE;VALUE=DATE:20260619
+UID:test-exdate@google.com
+SUMMARY:🏫 Skola
+END:VEVENT
+END:VCALENDAR`;
+
+  it('excludes EXDATE from recurring events', () => {
+    const events = parseEvents(EXDATE, '2026-06-16', '2026-06-22');
+    const dates = events.map(e => e.date);
+    assert.ok(dates.includes('2026-06-16'));
+    assert.ok(dates.includes('2026-06-17'));
+    assert.ok(dates.includes('2026-06-18'));
+    assert.ok(!dates.includes('2026-06-19'));
+    assert.ok(dates.includes('2026-06-22'));
+  });
+});
+
+describe('parseEvents — RECURRENCE-ID', () => {
+  const RECURRENCE_ID = `BEGIN:VCALENDAR
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260617
+DTEND;VALUE=DATE:20260618
+RECURRENCE-ID;VALUE=DATE:20260617
+UID:test-recid@google.com
+SUMMARY:🎨 Pyssel
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260616
+DTEND;VALUE=DATE:20260617
+RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR
+UID:test-recid@google.com
+SUMMARY:🏫 Skola
+END:VEVENT
+END:VCALENDAR`;
+
+  it('overrides recurring instance with RECURRENCE-ID event', () => {
+    const events = parseEvents(RECURRENCE_ID, '2026-06-16', '2026-06-19');
+    const wed = events.filter(e => e.date === '2026-06-17');
+    assert.equal(wed.length, 1);
+    assert.ok(wed[0].title.includes('Pyssel'));
+  });
+
+  it('keeps non-overridden instances unchanged', () => {
+    const events = parseEvents(RECURRENCE_ID, '2026-06-16', '2026-06-19');
+    const tue = events.filter(e => e.date === '2026-06-16');
+    assert.equal(tue.length, 1);
+    assert.ok(tue[0].title.includes('Skola'));
+  });
+});
+
 describe('getEventsForDate', () => {
   it('filters events by date string', () => {
     const events = [

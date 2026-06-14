@@ -37,6 +37,7 @@ function extractVEvents(ical) {
   let match;
   while ((match = re.exec(unfolded)) !== null) {
     const props = {};
+    const multiProps = {};
     for (const line of match[1].split('\n')) {
       const colonIdx = line.indexOf(':');
       if (colonIdx === -1) continue;
@@ -45,10 +46,29 @@ function extractVEvents(ical) {
       const baseName = key.split(';')[0];
       props[baseName] = val;
       props[key] = val;
+      if (!multiProps[baseName]) multiProps[baseName] = [];
+      multiProps[baseName].push(val);
     }
+    props._multi = multiProps;
     blocks.push(props);
   }
   return blocks;
+}
+
+function getExdates(props) {
+  const dates = new Set();
+  const vals = props._multi?.EXDATE || [];
+  for (const val of vals) {
+    dates.add(parseDate(val.replace(/T.*/, '')));
+  }
+  return dates;
+}
+
+function getRecurrenceId(props) {
+  for (const [k, v] of Object.entries(props)) {
+    if (k.startsWith('RECURRENCE-ID')) return parseDate(v.replace(/T.*/, ''));
+  }
+  return null;
 }
 
 function isAllDay(props) {
@@ -133,9 +153,20 @@ function expandRRule(startDate, rrule, rangeStart, rangeEnd) {
 export function parseEvents(icalText, rangeStart, rangeEnd) {
   const vevents = extractVEvents(icalText);
   const events = [];
+  const overrides = new Map();
 
   for (const props of vevents) {
     if (!isAllDay(props)) continue;
+    const recId = getRecurrenceId(props);
+    if (recId) {
+      const uid = props['UID'] || '';
+      overrides.set(`${uid}:${recId}`, props);
+    }
+  }
+
+  for (const props of vevents) {
+    if (!isAllDay(props)) continue;
+    if (getRecurrenceId(props)) continue;
 
     const rawStart = getDtstart(props);
     if (!rawStart) continue;
@@ -143,11 +174,21 @@ export function parseEvents(icalText, rangeStart, rangeEnd) {
     const title = unescapeIcal(props['SUMMARY'] || '');
     const description = unescapeIcal(props['DESCRIPTION'] || '');
     const rrule = props['RRULE'];
+    const uid = props['UID'] || '';
 
     if (rrule) {
+      const exdates = getExdates(props);
       const dates = expandRRule(startDate, rrule, rangeStart, rangeEnd);
       for (const date of dates) {
-        events.push({ date, title, description });
+        if (exdates.has(date)) continue;
+        const override = overrides.get(`${uid}:${date}`);
+        if (override) {
+          const oTitle = unescapeIcal(override['SUMMARY'] || title);
+          const oDesc = unescapeIcal(override['DESCRIPTION'] || description);
+          events.push({ date, title: oTitle, description: oDesc });
+        } else {
+          events.push({ date, title, description });
+        }
       }
     } else {
       const rawEnd = getDtend(props);
